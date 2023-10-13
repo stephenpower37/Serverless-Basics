@@ -80,5 +80,32 @@ export class SimpleAppStack extends cdk.Stack {
 
     new cdk.CfnOutput(this, "Simple Function Url", { value: simpleFnURL.url });
 
+    const GetMoviesFn = new lambdanode.NodejsFunction(
+      this,
+      "GetMoviesFn",
+      {
+        architecture: lambda.Architecture.ARM_64,
+        runtime: lambda.Runtime.NODEJS_16_X,
+        entry: `${__dirname}/../lambdas/getMovies.ts`,
+        timeout: cdk.Duration.seconds(10),
+        memorySize: 128,
+        environment: {
+          TABLE_NAME: moviesTable.tableName,
+          REGION: 'eu-west-1',
+        },
+      }
+    )
+    
+    const GetMoviesURL = GetMoviesFn.addFunctionUrl({
+      authType: lambda.FunctionUrlAuthType.NONE,
+      cors: {
+        allowedOrigins: ["*"],
+      },
+    });
+
+    moviesTable.grantReadData(GetMoviesFn)
+
+    new cdk.CfnOutput(this, "Get Movies Function Url", { value: GetMoviesURL.url });
+
   }
 }
